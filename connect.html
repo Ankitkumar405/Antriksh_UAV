@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Connect — Antriksh</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .dash-top{ display:grid; grid-template-columns:1fr 1fr; gap:22px; margin-bottom:22px; }
+  @media (max-width:980px){ .dash-top{ grid-template-columns:1fr; } }
+
+  /* --- connect card --- */
+  .connect-panel{
+    background:linear-gradient(165deg, var(--panel) 0%, var(--ink-soft) 100%);
+    border:1px solid var(--panel-line); border-radius:14px; padding:26px;
+    display:flex; flex-direction:column;
+  }
+  .code-hint{ display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .code-chip{
+    font-family:var(--font-mono); font-size:11px; color:var(--slate); border:1px solid var(--panel-line);
+    padding:4px 9px; border-radius:999px; cursor:pointer; background:transparent;
+  }
+  .code-chip:hover{ color:var(--brass); border-color:var(--brass); }
+
+  /* --- 3D viewer card --- */
+  .viewer-panel{
+    position:relative; border-radius:14px; overflow:hidden; border:1px solid var(--panel-line);
+    background:
+      radial-gradient(ellipse at 50% 20%, rgba(201,163,106,.14), transparent 60%),
+      linear-gradient(180deg, #1a1f25 0%, #12151a 100%);
+    min-height:340px; display:flex; flex-direction:column;
+  }
+  .viewer-head{
+    position:absolute; top:14px; left:16px; right:16px; z-index:5; display:flex; justify-content:space-between; align-items:flex-start;
+  }
+  .viewer-title{ font-family:var(--font-mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--slate); }
+  .viewer-hint{
+    position:absolute; bottom:12px; left:0; right:0; text-align:center; z-index:5;
+    font-family:var(--font-mono); font-size:11px; color:var(--slate); opacity:.75;
+  }
+  #modelViewer{ flex:1; width:100%; min-height:340px; }
+
+  /* --- telemetry strip: richer than a bare stat-grid --- */
+  .tele-strip{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px;
+  }
+  @media (max-width:760px){ .tele-strip{ grid-template-columns:repeat(2,1fr); } }
+  .tele-card{
+    background:var(--panel); border:1px solid var(--panel-line); border-radius:12px; padding:18px;
+    position:relative; overflow:hidden;
+  }
+  .tele-card::before{
+    content:""; position:absolute; top:0; left:0; right:0; height:2px;
+    background:linear-gradient(90deg, var(--moss-bright), transparent);
+  }
+  .tele-label{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--slate); margin-bottom:8px; }
+  .tele-value{ font-family:var(--font-mono); font-size:26px; color:var(--paper); }
+  .tele-value small{ font-size:12px; color:var(--slate); margin-left:3px; }
+  .tele-bar{ height:4px; border-radius:2px; background:var(--panel-line); margin-top:12px; overflow:hidden; }
+  .tele-bar-fill{ height:100%; background:var(--moss-bright); border-radius:2px; transition:width .5s var(--ease); }
+
+  /* --- spec + model detail card --- */
+  .detail-grid{ display:grid; grid-template-columns:1.3fr 1fr; gap:22px; }
+  @media (max-width:900px){ .detail-grid{ grid-template-columns:1fr; } }
+  .spec-row{ display:flex; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--panel-line); font-size:13.5px; }
+  .spec-row:last-child{ border-bottom:none; }
+  .spec-row .k{ color:var(--slate); }
+  .spec-row .v{ font-family:var(--font-mono); color:var(--paper); }
+
+  .empty-state{ text-align:center; padding:70px 20px; color:var(--slate); }
+  .empty-state svg{ opacity:.5; margin-bottom:14px; }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="wrap">
+    <a class="brand" href="index.html">
+      <svg class="brand-mark" viewBox="0 0 24 24" fill="none"><path d="M12 2 L20 20 L12 15.5 L4 20 Z" fill="#c9a36a"/></svg>
+      Antriksh <span class="brand-sub">GCS</span>
+    </a>
+    <button class="navtoggle" aria-label="Menu">☰</button>
+    <div class="navlinks">
+      <a href="index.html">Home</a>
+      <a href="connect.html" class="active">Connect</a>
+      <a href="delivery.html">Delivery</a>
+      <a href="rescue.html">Rescue</a>
+      <a href="integrate.html">Integration</a>
+      <a href="team.html">Team</a>
+      <a href="about.html">About</a>
+      <a href="blog.html">Blog</a>
+    </div>
+  </div>
+</nav>
+
+<main class="page-body">
+  <div class="wrap section" style="padding-top:36px;">
+    <div class="eyebrow"><span class="dot" id="topDot"></span> <span id="statusText">Not connected</span></div>
+    <h1 style="font-size:32px; margin:8px 0 26px;">Drone dashboard</h1>
+
+    <div class="dash-top">
+      <!-- Connect form -->
+      <div class="connect-panel">
+        <div class="panel-title">Enter UAV code</div>
+        <div class="field">
+          <label for="uavCode">UAV code</label>
+          <input id="uavCode" type="text" placeholder="e.g. SCT-7734-KX" autocomplete="off">
+          <div class="error-text" id="codeError">Code not recognized. Try a demo code below.</div>
+          <div class="code-hint" id="codeChips"></div>
+        </div>
+        <button class="btn btn-primary btn-block" id="connectBtn">Connect</button>
+        <button class="btn btn-ghost btn-block hidden" id="disconnectBtn" style="margin-top:10px;">Disconnect</button>
+        <div class="divider"></div>
+        <div id="miniSummary" class="hidden">
+          <div class="spec-row"><span class="k">Model</span><span class="v" id="miniName">—</span></div>
+          <div class="spec-row"><span class="k">Role</span><span class="v" id="miniRole">—</span></div>
+          <div class="spec-row"><span class="k">Feed</span><span class="v" id="miniFeed">—</span></div>
+        </div>
+        <div style="flex:1;"></div>
+        <div class="status-line" style="margin-top:16px;"><span class="dot off" id="statusDot"></span> <span id="statusText2">Not connected</span></div>
+      </div>
+
+      <!-- 3D viewer -->
+      <div class="viewer-panel">
+        <div class="viewer-head">
+          <span class="viewer-title">Airframe model</span>
+          <span class="badge" id="modelBadge">Reference build</span>
+        </div>
+        <div id="modelViewer"></div>
+        <div class="viewer-hint">Drag to rotate · scroll to zoom</div>
+      </div>
+    </div>
+
+    <div id="emptyState" class="empty-state panel">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+      <p style="margin:0;">Connect a UAV above to see live telemetry and full specs here.</p>
+    </div>
+
+    <div id="dataState" class="hidden">
+      <div class="tele-strip">
+        <div class="tele-card">
+          <div class="tele-label">Battery</div>
+          <div class="tele-value" id="statBatt">—<small>%</small></div>
+          <div class="tele-bar"><div class="tele-bar-fill" id="battBar" style="width:0%;"></div></div>
+        </div>
+        <div class="tele-card">
+          <div class="tele-label">Speed</div>
+          <div class="tele-value" id="statSpeed">—<small>km/h</small></div>
+        </div>
+        <div class="tele-card">
+          <div class="tele-label">Range</div>
+          <div class="tele-value" id="statRange">—<small>km</small></div>
+        </div>
+        <div class="tele-card">
+          <div class="tele-label">Payload cap.</div>
+          <div class="tele-value" id="statPayload">—<small>kg</small></div>
+        </div>
+      </div>
+
+      <div class="detail-grid">
+        <div class="panel">
+          <div class="panel-title">Model specification</div>
+          <div class="spec-row"><span class="k">Frame</span><span class="v" id="specFrame">—</span></div>
+          <div class="spec-row"><span class="k">Weight (empty)</span><span class="v" id="specWeight">—</span></div>
+          <div class="spec-row"><span class="k">Battery capacity</span><span class="v" id="specBattWh">—</span></div>
+          <div class="spec-row"><span class="k">Control</span><span class="v" id="specController">—</span></div>
+          <div class="spec-row"><span class="k">Live position</span><span class="v mono" id="specPos">—</span></div>
+          <div class="divider"></div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <a href="delivery.html" class="btn btn-primary">Plan a delivery →</a>
+            <a href="rescue.html" class="btn btn-ghost">Use for rescue →</a>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Flight mode</div>
+          <div style="display:flex; gap:8px; margin-bottom:16px;">
+            <span class="badge live" id="badgeManual" style="cursor:default;">Manual</span>
+            <span class="badge" id="badgeAuto" style="cursor:default;">Auto</span>
+          </div>
+          <p style="font-size:13.5px; margin-bottom:0;">This airframe flies both ways — draw a path by hand on Delivery/Rescue, or hand it a point A and B and let the console plan the route. Mode updates here once a mission is dispatched.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Antriksh Ground Control</p>
+    <p class="mono" id="footStatus">Not connected</p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/uav-registry.js"></script>
+<script src="js/telemetry.js"></script>
+<script src="js/drone-model.js"></script>
+<script src="js/ui.js"></script>
+<script>
+  initDroneModel("modelViewer");
+
+  const chips = document.getElementById("codeChips");
+  DEMO_UAV_CODES.forEach((c) => {
+    const b = document.createElement("button");
+    b.className = "code-chip"; b.textContent = c;
+    b.onclick = () => { document.getElementById("uavCode").value = c; };
+    chips.appendChild(b);
+  });
+
+  const codeInput = document.getElementById("uavCode");
+  const connectBtn = document.getElementById("connectBtn");
+  const disconnectBtn = document.getElementById("disconnectBtn");
+  const codeError = document.getElementById("codeError");
+
+  connectBtn.addEventListener("click", () => {
+    const uav = telemetry.connect(codeInput.value);
+    if (!uav) {
+      codeError.style.display = "block";
+      showToast("UAV code not found");
+      return;
+    }
+    codeError.style.display = "none";
+    showToast(`Connected to ${uav.name}`);
+  });
+
+  disconnectBtn.addEventListener("click", () => {
+    telemetry.disconnect();
+    showToast("Disconnected");
+  });
+
+  codeInput.addEventListener("keydown", (e) => { if (e.key === "Enter") connectBtn.click(); });
+
+  telemetry.subscribe((s) => {
+    const dots = [document.getElementById("topDot"), document.getElementById("statusDot")];
+    const statusTexts = [document.getElementById("statusText"), document.getElementById("statusText2")];
+    const footStatus = document.getElementById("footStatus");
+
+    if (s.connected) {
+      dots.forEach((d) => (d.className = "dot live"));
+      statusTexts.forEach((t) => (t.textContent = `Linked · ${s.uavCode}`));
+      footStatus.textContent = `Linked · ${s.uavCode} · ${s.simulated ? "simulated" : "live"} feed`;
+      connectBtn.classList.add("hidden");
+      disconnectBtn.classList.remove("hidden");
+      document.getElementById("emptyState").classList.add("hidden");
+      document.getElementById("dataState").classList.remove("hidden");
+      document.getElementById("miniSummary").classList.remove("hidden");
+
+      const u = s.uav;
+      document.getElementById("miniName").textContent = u.name;
+      document.getElementById("miniRole").textContent = u.role;
+      document.getElementById("miniFeed").textContent = s.simulated ? "Simulated" : "Live";
+
+      document.getElementById("statBatt").innerHTML = Math.round(s.batteryPct) + "<small>%</small>";
+      document.getElementById("battBar").style.width = Math.round(s.batteryPct) + "%";
+      document.getElementById("statSpeed").innerHTML = Math.round(s.speedKmh) + "<small>km/h</small>";
+      document.getElementById("statRange").innerHTML = u.maxRangeKm + "<small>km</small>";
+      document.getElementById("statPayload").innerHTML = u.maxPayloadKg + "<small>kg</small>";
+
+      document.getElementById("specFrame").textContent = u.frame;
+      document.getElementById("specWeight").textContent = u.weightKg + " kg";
+      document.getElementById("specBattWh").textContent = u.batteryWh + " Wh";
+      document.getElementById("specController").textContent = u.controller;
+      document.getElementById("specPos").textContent =
+        s.lat ? `${s.lat.toFixed(5)}, ${s.lng.toFixed(5)}` : "—";
+
+      document.getElementById("badgeManual").className = "badge " + (s.mode === "manual" ? "live" : "");
+      document.getElementById("badgeAuto").className = "badge " + (s.mode === "auto" ? "live" : "");
+    } else {
+      dots.forEach((d) => (d.className = "dot off"));
+      statusTexts.forEach((t) => (t.textContent = "Not connected"));
+      footStatus.textContent = "Not connected";
+      connectBtn.classList.remove("hidden");
+      disconnectBtn.classList.add("hidden");
+      document.getElementById("emptyState").classList.remove("hidden");
+      document.getElementById("dataState").classList.add("hidden");
+      document.getElementById("miniSummary").classList.add("hidden");
+    }
+  });
+</script>
+</body>
+</html>

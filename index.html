@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Antriksh — Ground Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .hero{ padding:150px 0 90px; position:relative; overflow:hidden; }
+  .hero-grid{ display:grid; grid-template-columns:1.15fr .85fr; gap:48px; align-items:center; }
+  @media (max-width:900px){ .hero-grid{ grid-template-columns:1fr; } }
+  .hero h1{ font-size:clamp(38px,5.4vw,64px); }
+  .hero .lede{ font-size:17px; max-width:520px; }
+  .hero-actions{ display:flex; gap:12px; margin-top:28px; flex-wrap:wrap; }
+
+  /* signature: layered instrument rings responding to a simulated live drone */
+  .instrument{ position:relative; width:100%; aspect-ratio:1; max-width:420px; margin:0 auto; }
+  #homeModelViewer{ position:absolute; inset:18px; z-index:1; }
+  #homeModelViewer canvas{ display:block; width:100% !important; height:100% !important; }
+  .ring{ position:absolute; inset:0; border-radius:50%; border:1px solid var(--panel-line); }
+  .ring.r2{ inset:38px; }
+  .ring.r3{ inset:76px; border-style:dashed; opacity:.6; }
+  .tick{ position:absolute; inset:0; }
+  .instrument-core{
+    position:absolute; left:50%; bottom:28px; z-index:2; width:148px; height:64px;
+    transform:translateX(-50%); border-radius:var(--radius); background:rgba(33,40,48,.9);
+    border:1px solid var(--panel-line); display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center;
+  }
+  .instrument-core .val{ font-family:var(--font-mono); font-size:30px; color:var(--moss-bright); }
+  .instrument-core .lbl{ font-family:var(--font-mono); font-size:10px; letter-spacing:.12em; color:var(--slate); text-transform:uppercase; margin-top:4px;}
+  .needle{
+    position:absolute; left:50%; top:50%; width:2px; height:44%; background:var(--brass);
+    transform-origin:bottom center; transform:translate(-50%,-100%) rotate(0deg);
+    transition:transform 1.6s var(--ease); border-radius:2px;
+  }
+
+  .path-row{ display:flex; align-items:stretch; gap:0; margin-top:6px; }
+  .path-card{
+    flex:1; background:var(--panel); border:1px solid var(--panel-line); border-radius:var(--radius);
+    padding:24px; position:relative; transition:border-color .2s var(--ease), transform .2s var(--ease);
+  }
+  .path-card:hover{ border-color:var(--brass); transform:translateY(-2px); }
+  .path-card .num{ font-family:var(--font-mono); font-size:11px; color:var(--brass); }
+  .path-card h3{ font-size:19px; margin:10px 0 8px; }
+  .path-card p{ font-size:14px; margin-bottom:16px; }
+  .path-card a{ font-family:var(--font-mono); font-size:12.5px; color:var(--moss-bright); text-decoration:none; }
+  .path-card a:hover{ text-decoration:underline; }
+
+  .modes{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  @media (max-width:760px){ .modes{ grid-template-columns:1fr; } }
+  .mode-card{ background:var(--ink-soft); border:1px solid var(--panel-line); border-radius:var(--radius); padding:22px; }
+  .mode-card .tag{ font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; }
+  .mode-card.manual .tag{ color:var(--clay); }
+  .mode-card.auto .tag{ color:var(--moss-bright); }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="wrap">
+    <a class="brand" href="index.html">
+      <svg class="brand-mark" viewBox="0 0 24 24" fill="none"><path d="M12 2 L20 20 L12 15.5 L4 20 Z" fill="#c9a36a"/></svg>
+      Antriksh <span class="brand-sub">GCS</span>
+    </a>
+    <button class="navtoggle" aria-label="Menu">☰</button>
+    <div class="navlinks">
+      <a href="index.html" class="active">Home</a>
+      <a href="connect.html">Connect</a>
+      <a href="delivery.html">Delivery</a>
+      <a href="rescue.html">Rescue</a>
+      <a href="integrate.html">Integration</a>
+      <a href="team.html">Team</a>
+      <a href="about.html">About</a>
+      <a href="blog.html">Blog</a>
+      <a href="connect.html" class="cta">Launch console</a>
+    </div>
+  </div>
+</nav>
+
+<main class="page-body">
+  <header class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="eyebrow"><span class="dot live"></span> Manual + autonomous, dual mode</div>
+        <h1>One console for<br>your UAV, start to landing.</h1>
+        <p class="lede">Enter your drone's code, connect it, plan a route from point A to point B — or fly it yourself. Built for a modular airframe that does delivery today and disaster response when you need it to.</p>
+        <div class="hero-actions">
+          <a href="connect.html" class="btn btn-primary">Connect your UAV →</a>
+          <a href="integrate.html" class="btn btn-ghost">Wire in your GPS</a>
+        </div>
+      </div>
+      <div class="instrument">
+        <div class="ring r1"></div>
+        <div class="ring r2"></div>
+        <div class="ring r3"></div>
+        <div id="homeModelViewer" aria-label="Interactive 3D model of the Antriksh UAV"></div>
+        <div class="needle" id="needle"></div>
+        <div class="instrument-core">
+          <div class="val" id="battVal">100%</div>
+          <div class="lbl">Battery · simulated</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow">What this console does</div>
+        <h2>Three jobs, one airframe</h2>
+      </div>
+      <div class="path-row">
+        <div class="path-card">
+          <div class="num">01</div>
+          <h3>Connect</h3>
+          <p>Enter your UAV code. The console looks up the model, its weight, range, battery and speed, and opens a live telemetry link.</p>
+          <a href="connect.html">Connect a drone →</a>
+        </div>
+        <div class="path-card">
+          <div class="num">02</div>
+          <h3>Deliver</h3>
+          <p>Enter a pickup and a drop-off. See distance, battery needed and ETA before you commit — Uber-style, but for a parcel in the air.</p>
+          <a href="delivery.html">Book a delivery →</a>
+        </div>
+        <div class="path-card">
+          <div class="num">03</div>
+          <h3>Rescue</h3>
+          <p>Share your live location with one tap. The nearest drone locates you and reports distance, battery and time to arrival.</p>
+          <a href="rescue.html">Request help →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0;">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow">Every mission, either way</div>
+        <h2>Manual or automatic — your call, every flight</h2>
+      </div>
+      <div class="modes">
+        <div class="mode-card manual">
+          <div class="tag">Manual</div>
+          <h3 style="font-size:18px;margin:8px 0;">Draw the path yourself</h3>
+          <p style="font-size:14px;">Click waypoints straight onto the map. The console flies exactly the line you drew, and still reports distance, battery and ETA for it.</p>
+        </div>
+        <div class="mode-card auto">
+          <div class="tag">Automatic</div>
+          <h3 style="font-size:18px;margin:8px 0;">Let the console route it</h3>
+          <p style="font-size:14px;">Give it point A and point B. It plans the direct route and hands off waypoints — no drawing required.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0;">
+    <div class="wrap panel" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:18px;">
+      <div>
+        <div class="eyebrow">Hardware status</div>
+        <h3 style="font-size:20px; margin:8px 0 4px;">Running on simulated telemetry today</h3>
+        <p style="margin:0; max-width:520px;">Your GPS is still on the breadboard, so every page runs on realistic simulated data. Nothing about the site changes when you're ready to go live — see the integration guide.</p>
+      </div>
+      <a href="integrate.html" class="btn btn-ghost">Read the integration guide →</a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Antriksh Ground Control — built for a modular UAV, delivery and disaster response on one airframe.</p>
+    <p class="mono">Telemetry: simulated</p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/drone-model.js"></script>
+<script src="js/ui.js"></script>
+<script>
+  initDroneModel("homeModelViewer");
+
+  // decorative instrument on the hero — cosmetic only, no real telemetry
+  let batt = 100;
+  setInterval(() => {
+    batt = Math.max(18, batt - Math.random() * 1.2);
+    document.getElementById("battVal").textContent = Math.round(batt) + "%";
+    document.getElementById("needle").style.transform =
+      `translate(-50%,-100%) rotate(${(100 - batt) * 2.4}deg)`;
+  }, 1400);
+</script>
+</body>
+</html>

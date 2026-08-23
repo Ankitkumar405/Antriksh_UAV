@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Delivery — Antriksh</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  .layout{ display:grid; grid-template-columns:380px 1fr; gap:22px; align-items:start; }
+  @media (max-width:980px){ .layout{ grid-template-columns:1fr; } }
+  .mode-toggle{ display:flex; background:var(--ink-soft); border:1px solid var(--panel-line); border-radius:999px; padding:3px; margin-bottom:18px; }
+  .mode-toggle button{
+    flex:1; border:none; background:transparent; color:var(--slate); font-family:var(--font-mono);
+    font-size:12.5px; padding:9px 0; border-radius:999px; cursor:pointer; transition:all .18s var(--ease);
+  }
+  .mode-toggle button.active{ background:var(--brass); color:var(--ink); font-weight:600; }
+  .code-hint{ display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .code-chip{
+    font-family:var(--font-mono); font-size:11px; color:var(--slate); border:1px solid var(--panel-line);
+    padding:4px 9px; border-radius:999px; cursor:pointer; background:transparent;
+  }
+  .code-chip:hover{ color:var(--brass); border-color:var(--brass); }
+  .manual-note{
+    display:none; font-size:12.5px; color:var(--clay); background:rgba(193,122,82,.08);
+    border:1px solid rgba(193,122,82,.35); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:14px;
+  }
+  .result{ display:none; }
+  .feasibility{ font-size:13px; padding:10px 12px; border-radius:var(--radius-sm); margin-top:14px; }
+  .feasibility.ok{ background:rgba(143,191,134,.08); border:1px solid rgba(143,191,134,.35); color:var(--moss-bright); }
+  .feasibility.bad{ background:rgba(207,97,87,.08); border:1px solid rgba(207,97,87,.35); color:var(--danger); }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="wrap">
+    <a class="brand" href="index.html">
+      <svg class="brand-mark" viewBox="0 0 24 24" fill="none"><path d="M12 2 L20 20 L12 15.5 L4 20 Z" fill="#c9a36a"/></svg>
+      Antriksh <span class="brand-sub">GCS</span>
+    </a>
+    <button class="navtoggle" aria-label="Menu">☰</button>
+    <div class="navlinks">
+      <a href="index.html">Home</a>
+      <a href="connect.html">Connect</a>
+      <a href="delivery.html" class="active">Delivery</a>
+      <a href="rescue.html">Rescue</a>
+      <a href="integrate.html">Integration</a>
+      <a href="team.html">Team</a>
+      <a href="about.html">About</a>
+      <a href="blog.html">Blog</a>
+    </div>
+  </div>
+</nav>
+
+<main class="page-body">
+  <div class="wrap section" style="padding-top:36px;">
+    <div class="eyebrow"><span class="dot" id="linkDot"></span> <span id="linkText">No UAV connected</span></div>
+    <h1 style="font-size:32px; margin:8px 0 26px;">Book a delivery</h1>
+
+    <div class="layout">
+      <!-- Booking form -->
+      <div class="panel">
+        <div class="mode-toggle">
+          <button id="modeAuto" class="active">Auto route</button>
+          <button id="modeManual">Draw manually</button>
+        </div>
+        <div class="manual-note" id="manualNote">Manual mode: click points on the map to draw the flight path. Distance is measured along your drawn line.</div>
+
+        <div class="field">
+          <label for="pointA">Point A — pickup</label>
+          <input id="pointA" type="text" placeholder="Start typing an address…" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="pointB">Point B — drop-off</label>
+          <input id="pointB" type="text" placeholder="Start typing an address…" autocomplete="off">
+        </div>
+
+        <button class="btn btn-primary btn-block" id="planBtn">Plan route</button>
+
+        <div class="result" id="result">
+          <div class="divider"></div>
+          <div class="stat-grid" style="grid-template-columns:1fr 1fr;">
+            <div class="stat"><div class="stat-label">Distance</div><div class="stat-value" id="rDist">—<small>km</small></div></div>
+            <div class="stat"><div class="stat-label">ETA</div><div class="stat-value" id="rEta">—<small>min</small></div></div>
+            <div class="stat"><div class="stat-label">Battery needed</div><div class="stat-value" id="rBatt">—<small>%</small></div></div>
+            <div class="stat"><div class="stat-label">Payload cap.</div><div class="stat-value" id="rPayload">—<small>kg</small></div></div>
+          </div>
+          <div class="feasibility" id="feasibility"></div>
+          <button class="btn btn-primary btn-block" style="margin-top:14px;" id="dispatchBtn">Dispatch drone</button>
+        </div>
+      </div>
+
+      <!-- Map -->
+      <div>
+        <div class="map-shell">
+          <div class="map-overlay-top">
+            <div class="map-chip"><span class="dot off" id="mapDot"></span> <span id="mapStatus">Idle</span></div>
+            <div class="map-chip mono" id="mapMode">Auto route</div>
+          </div>
+          <div id="map"></div>
+        </div>
+        <p class="hint" style="margin-top:10px;">No UAV connected yet? Route planning still works — connect on the <a href="connect.html" style="color:var(--brass);">Connect page</a> to enable live battery/range checks against your real airframe.</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Antriksh Ground Control — Delivery</p>
+    <p class="mono" id="footStatus">Simulated telemetry</p>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/uav-registry.js"></script>
+<script src="js/locations.js"></script>
+<script src="js/telemetry.js"></script>
+<script src="js/route.js"></script>
+<script src="js/autocomplete.js"></script>
+<script src="js/ui.js"></script>
+<script>
+  const map = buildMap("map", { lat: 25.5941, lng: 85.1376 });
+  const draw = attachManualDraw(map);
+  let mode = "auto";
+  let markerA = null, markerB = null, autoLine = null, droneMarker = null;
+  let ptA = null, ptB = null;
+
+  const acA = attachAutocomplete(document.getElementById("pointA"), () => {});
+  const acB = attachAutocomplete(document.getElementById("pointB"), () => {});
+
+  document.getElementById("modeAuto").addEventListener("click", () => setMode("auto"));
+  document.getElementById("modeManual").addEventListener("click", () => setMode("manual"));
+
+  function setMode(m) {
+    mode = m;
+    document.getElementById("modeAuto").classList.toggle("active", m === "auto");
+    document.getElementById("modeManual").classList.toggle("active", m === "manual");
+    document.getElementById("manualNote").style.display = m === "manual" ? "block" : "none";
+    document.getElementById("mapMode").textContent = m === "auto" ? "Auto route" : "Manual draw";
+    draw.setActive(m === "manual");
+    if (m === "manual") { draw.clear(); showToast("Click the map to draw your flight path"); }
+  }
+
+  async function resolvePoint(raw, picked) {
+    if (picked) return picked;
+    const byCode = findLocation(raw);
+    if (byCode) return byCode;
+    return await geocodeText(raw);
+  }
+
+  document.getElementById("planBtn").addEventListener("click", async () => {
+    const aRaw = document.getElementById("pointA").value;
+    const bRaw = document.getElementById("pointB").value;
+    if (!aRaw || !bRaw) { showToast("Enter both a pickup and a drop-off"); return; }
+
+    document.getElementById("planBtn").disabled = true;
+    document.getElementById("planBtn").textContent = "Locating…";
+    ptA = await resolvePoint(aRaw, acA.getSelected());
+    ptB = await resolvePoint(bRaw, acB.getSelected());
+    document.getElementById("planBtn").disabled = false;
+    document.getElementById("planBtn").textContent = "Plan route";
+
+    if (!ptA || !ptB) { showToast("Couldn't locate one of those points"); return; }
+
+    if (markerA) map.removeLayer(markerA);
+    if (markerB) map.removeLayer(markerB);
+    if (autoLine) map.removeLayer(autoLine);
+    markerA = L.marker([ptA.lat, ptA.lng], { icon: pinDivIcon("#8fbf86") }).addTo(map).bindPopup("A — " + (ptA.label || aRaw));
+    markerB = L.marker([ptB.lat, ptB.lng], { icon: pinDivIcon("#c17a52") }).addTo(map).bindPopup("B — " + (ptB.label || bRaw));
+
+    let distanceKm;
+    if (mode === "manual") {
+      const drawn = draw.getPoints();
+      if (drawn.length < 2) { showToast("Draw at least two points on the map for a manual path"); return; }
+      distanceKm = pathLengthKm([ptA, ...drawn, ptB]);
+    } else {
+      autoLine = L.polyline([[ptA.lat, ptA.lng], [ptB.lat, ptB.lng]], { color: "#8fbf86", weight: 3 }).addTo(map);
+      distanceKm = haversineKm(ptA, ptB);
+    }
+
+    map.fitBounds(L.latLngBounds([[ptA.lat, ptA.lng], [ptB.lat, ptB.lng]]), { padding: [50, 50] });
+
+    const uav = telemetry.state.uav || { cruiseSpeedKmh: 40, maxRangeKm: 12, maxPayloadKg: 1.5 };
+    const est = estimateMission(uav, distanceKm);
+
+    document.getElementById("result").style.display = "block";
+    document.getElementById("rDist").innerHTML = est.distanceKm + "<small>km</small>";
+    document.getElementById("rEta").innerHTML = est.etaMin + "<small>min</small>";
+    document.getElementById("rBatt").innerHTML = est.battPctNeeded + "<small>%</small>";
+    document.getElementById("rPayload").innerHTML = uav.maxPayloadKg + "<small>kg</small>";
+
+    const feas = document.getElementById("feasibility");
+    feas.className = "feasibility " + (est.feasible ? "ok" : "bad");
+    feas.textContent = est.feasible
+      ? "Within range, with a safety reserve. Ready to dispatch."
+      : "Beyond safe range for this airframe on a single charge — plan a closer drop point or a relay stop.";
+  });
+
+  document.getElementById("dispatchBtn").addEventListener("click", () => {
+    if (!ptA || !ptB) return;
+    if (!telemetry.state.connected) { showToast("Connect a UAV first on the Connect page"); return; }
+    telemetry.flyRoute(ptA, ptB, haversineKm(ptA, ptB));
+    telemetry.setMode(mode === "manual" ? "manual" : "auto");
+    showToast("Drone dispatched — tracking live position");
+  });
+
+  telemetry.subscribe((s) => {
+    document.getElementById("linkDot").className = "dot " + (s.connected ? "live" : "off");
+    document.getElementById("linkText").textContent = s.connected ? `Linked · ${s.uavCode}` : "No UAV connected";
+    document.getElementById("mapDot").className = "dot " + (s.connected ? "live" : "off");
+    document.getElementById("mapStatus").textContent = s.connected ? "Tracking" : "Idle";
+    document.getElementById("footStatus").textContent = s.simulated ? "Simulated telemetry" : "Live telemetry";
+
+    if (s.connected && s.lat) {
+      if (!droneMarker) droneMarker = L.marker([s.lat, s.lng], { icon: droneDivIcon(s.headingDeg) }).addTo(map);
+      else { droneMarker.setLatLng([s.lat, s.lng]); droneMarker.setIcon(droneDivIcon(s.headingDeg)); }
+    }
+  });
+</script>
+</body>
+</html>
