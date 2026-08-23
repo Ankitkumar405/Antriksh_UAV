@@ -113,6 +113,7 @@ class TelemetryEngine {
         const d = JSON.parse(evt.data);
         // Expected shape from your bridge: { lat, lng, headingDeg, speedKmh, batteryPct }
         Object.assign(this.state, d);
+        this.state.speedKmh = 0;
         this._emit();
       };
       this._ws.onerror = () => {
@@ -139,14 +140,14 @@ class TelemetryEngine {
         r.progress = Math.min(1, r.progress + 0.02 + Math.random() * 0.01);
         s.lat = r.origin.lat + (r.dest.lat - r.origin.lat) * r.progress;
         s.lng = r.origin.lng + (r.dest.lng - r.origin.lng) * r.progress;
-        s.speedKmh = Math.round((s.uav?.cruiseSpeedKmh || 40) * (0.85 + Math.random() * 0.3));
+        s.speedKmh = 0;
         s.batteryPct = Math.max(4, Math.round(100 - r.progress * 62));
         s.headingDeg = bearingBetween(r.origin, r.dest);
       } else {
         // idle hover jitter — small realistic drift, not a flight
         s.lat += (Math.random() - 0.5) * 0.00015;
         s.lng += (Math.random() - 0.5) * 0.00015;
-        s.speedKmh = Math.round(Math.random() * 3);
+        s.speedKmh = 0;
         s.batteryPct = Math.max(4, s.batteryPct - 0.03);
       }
       this._emit();
