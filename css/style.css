@@ -52,6 +52,38 @@ p{ margin:0 0 1em; color:var(--paper-dim); }
 a{ color:inherit; }
 .mono{ font-family:var(--font-mono); }
 
+/* ---------- flight boot screen ---------- */
+.boot-screen{
+  position:fixed; inset:0; z-index:2000; display:grid; place-items:center;
+  overflow:hidden; background:var(--ink); color:var(--paper);
+  transition:opacity .65s var(--ease), visibility .65s;
+}
+.boot-screen.done{ opacity:0; visibility:hidden; pointer-events:none; }
+.boot-screen::before{
+  content:""; position:absolute; inset:0; opacity:.2;
+  background-image:linear-gradient(var(--panel-line) 1px,transparent 1px),linear-gradient(90deg,var(--panel-line) 1px,transparent 1px);
+  background-size:48px 48px; mask-image:linear-gradient(to bottom,transparent,#000 25%,#000 75%,transparent);
+}
+.boot-screen::after{
+  content:""; position:absolute; left:0; right:0; top:var(--boot-y,50%); height:1px;
+  background:linear-gradient(90deg,transparent,var(--moss-bright),transparent); opacity:.55;
+}
+.boot-inner{ position:relative; z-index:1; width:min(620px,calc(100% - 40px)); text-align:center; }
+.boot-mark{ width:66px; height:66px; margin:0 auto 26px; display:grid; place-items:center; border:1px solid var(--brass); border-radius:50%; position:relative; }
+.boot-mark::before,.boot-mark::after{ content:""; position:absolute; border:1px solid var(--panel-line); border-radius:50%; }
+.boot-mark::before{ inset:-12px; border-left-color:var(--moss-bright); animation:bootSpin 4s linear infinite; }
+.boot-mark::after{ inset:8px; border-right-color:var(--clay); animation:bootSpin 2.5s linear infinite reverse; }
+.boot-mark svg{ width:34px; height:34px; position:relative; z-index:1; }
+.boot-kicker{ font-family:var(--font-mono); font-size:11px; letter-spacing:.2em; color:var(--brass); text-transform:uppercase; }
+.boot-title{ font-size:clamp(32px,7vw,58px); margin:12px 0 8px; }
+.boot-copy{ color:var(--slate); font-family:var(--font-mono); font-size:12px; min-height:19px; }
+.boot-meter{ height:3px; background:var(--panel-line); margin:28px auto 12px; max-width:420px; overflow:hidden; }
+.boot-meter-fill{ width:0; height:100%; background:linear-gradient(90deg,var(--moss-bright),var(--brass)); transition:width .25s linear; }
+.boot-readout{ display:flex; justify-content:space-between; max-width:420px; margin:0 auto; color:var(--slate); font:10px var(--font-mono); letter-spacing:.08em; text-transform:uppercase; }
+.boot-enter{ margin-top:28px; background:transparent; border:1px solid var(--panel-line); color:var(--paper); border-radius:999px; padding:10px 18px; font:11px var(--font-mono); letter-spacing:.1em; text-transform:uppercase; cursor:pointer; transition:all .2s var(--ease); }
+.boot-enter:hover{ border-color:var(--brass); color:var(--brass); transform:translateY(-2px); }
+@keyframes bootSpin{ to{ transform:rotate(360deg); } }
+
 @media (prefers-reduced-motion: reduce){
   *{ animation-duration:.001ms !important; transition-duration:.001ms !important; }
 }
