@@ -35,6 +35,7 @@
 
 const USE_LIVE_FEED = false;                 // flip true once your bridge is running
 const WS_ENDPOINT = "ws://localhost:8765";   // SWAP POINT: your bridge/board address
+const FIXED_UAV_POSITION = { lat: 25.5941, lng: 85.1376 };
 
 class TelemetryEngine {
   constructor() {
@@ -100,8 +101,6 @@ class TelemetryEngine {
   /** Register a planned A -> B mission so simulated flight can move toward it. */
   flyRoute(origin, dest, distanceKm) {
     this._route = { origin, dest, distanceKm, progress: 0 };
-    this.state.lat = origin.lat;
-    this.state.lng = origin.lng;
   }
 
   // ---- SWAP POINT: live feed -------------------------------------------
@@ -113,6 +112,8 @@ class TelemetryEngine {
         const d = JSON.parse(evt.data);
         // Expected shape from your bridge: { lat, lng, headingDeg, speedKmh, batteryPct }
         Object.assign(this.state, d);
+        this.state.lat = FIXED_UAV_POSITION.lat;
+        this.state.lng = FIXED_UAV_POSITION.lng;
         this.state.speedKmh = 0;
         this._emit();
       };
@@ -127,26 +128,20 @@ class TelemetryEngine {
   // ---- simulated demo data ----------------------------------------------
   _connectSimulated() {
     this.state.simulated = true;
-    // Start somewhere near a plausible default depot if no route set yet.
-    if (this.state.lat === null) {
-      this.state.lat = 25.5941 + (Math.random() - 0.5) * 0.02;
-      this.state.lng = 85.1376 + (Math.random() - 0.5) * 0.02;
-    }
+    this.state.lat = FIXED_UAV_POSITION.lat;
+    this.state.lng = FIXED_UAV_POSITION.lng;
     if (this._simHandle) clearInterval(this._simHandle);
     this._simHandle = setInterval(() => {
       const s = this.state;
       if (this._route && this._route.progress < 1) {
         const r = this._route;
         r.progress = Math.min(1, r.progress + 0.02 + Math.random() * 0.01);
-        s.lat = r.origin.lat + (r.dest.lat - r.origin.lat) * r.progress;
-        s.lng = r.origin.lng + (r.dest.lng - r.origin.lng) * r.progress;
         s.speedKmh = 0;
         s.batteryPct = Math.max(4, Math.round(100 - r.progress * 62));
         s.headingDeg = bearingBetween(r.origin, r.dest);
       } else {
-        // idle hover jitter — small realistic drift, not a flight
-        s.lat += (Math.random() - 0.5) * 0.00015;
-        s.lng += (Math.random() - 0.5) * 0.00015;
+        s.lat = FIXED_UAV_POSITION.lat;
+        s.lng = FIXED_UAV_POSITION.lng;
         s.speedKmh = 0;
         s.batteryPct = Math.max(4, s.batteryPct - 0.03);
       }
