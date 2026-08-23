@@ -255,9 +255,23 @@ a{ color:inherit; }
 .leaflet-container{ background:var(--ink-soft) !important; font-family:var(--font-body) !important; }
 
 /* ---------- footer ---------- */
-footer{ border-top:1px solid var(--panel-line); padding:36px 0 44px; margin-top:80px; }
-footer .wrap{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; }
-footer p{ margin:0; font-size:13px; color:var(--slate); }
+footer{ border-top:1px solid var(--panel-line); padding:58px 0 24px; margin-top:80px; background:var(--ink-soft); }
+.footer-grid{ display:grid; grid-template-columns:1.5fr 1fr 1fr 1.2fr; gap:34px; padding-bottom:42px; }
+.footer-brand{ display:inline-flex; margin-bottom:14px; }
+.footer-intro{ max-width:300px; font-size:13px; color:var(--slate); }
+.footer-heading{ margin:3px 0 14px; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--brass); }
+.footer-links{ display:flex; flex-direction:column; align-items:flex-start; gap:8px; }
+.footer-links a{ color:var(--paper-dim); font-size:13px; text-decoration:none; transition:color .18s var(--ease); }
+.footer-links a:hover{ color:var(--moss-bright); }
+.footer-contact{ display:flex; flex-direction:column; gap:8px; }
+.footer-contact a,.footer-contact span{ color:var(--paper-dim); font-size:13px; text-decoration:none; }
+.footer-contact a:hover{ color:var(--moss-bright); }
+.footer-status{ display:flex; align-items:center; gap:8px; margin-top:15px; font:11px var(--font-mono); color:var(--slate); }
+.footer-bottom{ border-top:1px solid var(--panel-line); padding-top:20px; display:flex; justify-content:space-between; align-items:center; gap:18px; flex-wrap:wrap; }
+.footer-bottom p{ margin:0; font-size:12px; color:var(--slate); }
+.footer-legal{ display:flex; gap:18px; flex-wrap:wrap; }
+.footer-legal a{ color:var(--slate); font-size:12px; text-decoration:none; }
+.footer-legal a:hover{ color:var(--paper); }
 
 /* ---------- utility ---------- */
 .section{ padding:64px 0; }
@@ -291,5 +305,12 @@ footer p{ margin:0; font-size:13px; color:var(--slate); }
   .map-shell{ height:clamp(300px,75vw,440px); }
   .map-overlay-top{ flex-wrap:wrap; }
   .map-chip{ font-size:10.5px; padding:6px 10px; }
-  footer{ margin-top:52px; padding-bottom:32px; }
+  footer{ margin-top:52px; padding:42px 0 22px; }
+  .footer-grid{ grid-template-columns:1fr 1fr; gap:30px 20px; padding-bottom:32px; }
+  .footer-intro{ max-width:none; }
+  .footer-bottom{ align-items:flex-start; flex-direction:column; gap:12px; }
+}
+
+@media (max-width:420px){
+  .footer-grid{ grid-template-columns:1fr; gap:24px; }
 }

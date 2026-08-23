@@ -61,8 +61,29 @@ function initBootScreen() {
   setTimeout(tick, 120);
 }
 
+function initFooter() {
+  const footer = document.querySelector("footer");
+  if (!footer) return;
+  const status = footer.querySelector("#footStatus")?.textContent.trim() || "Systems online · simulated";
+  footer.innerHTML = `
+    <div class="wrap">
+      <div class="footer-grid">
+        <div>
+          <a class="brand footer-brand" href="index.html"><svg class="brand-mark" viewBox="0 0 24 24" fill="none"><path d="M12 2 L20 20 L12 15.5 L4 20 Z" fill="#c9a36a"/></svg> Antriksh <span class="brand-sub">GCS</span></a>
+          <p class="footer-intro">Ground control for a modular UAV, built for delivery, disaster response, and the last mile in between.</p>
+          <div class="footer-status"><span class="dot live"></span> <span id="footStatus">${status}</span></div>
+        </div>
+        <div><div class="footer-heading">Explore</div><div class="footer-links"><a href="index.html">Home</a><a href="connect.html">Connect</a><a href="delivery.html">Delivery</a><a href="rescue.html">Rescue</a></div></div>
+        <div><div class="footer-heading">Antriksh</div><div class="footer-links"><a href="about.html">About us</a><a href="team.html">Our team</a><a href="blog.html">Flight journal</a><a href="integrate.html">Integration</a></div></div>
+        <div><div class="footer-heading">Stay connected</div><div class="footer-contact"><a href="mailto:crew@antriksh.example">crew@antriksh.example</a><span>Patna, Bihar · India</span><span>Mon–Fri · 09:00–18:00 IST</span></div></div>
+      </div>
+      <div class="footer-bottom"><p>© 2026 Antriksh Ground Control. All rights reserved.</p><div class="footer-legal"><a href="about.html">About the project</a><a href="integrate.html">Data &amp; telemetry</a><a href="mailto:crew@antriksh.example">Contact</a></div></div>
+    </div>`;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   initBootScreen();
+  initFooter();
   const toggle = document.querySelector(".navtoggle");
   const links = document.querySelector(".navlinks");
   if (toggle && links) {
