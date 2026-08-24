@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
   .hero{ padding:150px 0 90px; position:relative; overflow:hidden; }
   .hero-grid{ display:grid; grid-template-columns:1.15fr .85fr; gap:48px; align-items:center; }
@@ -55,6 +56,26 @@
   .mode-card .tag{ font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; }
   .mode-card.manual .tag{ color:var(--clay); }
   .mode-card.auto .tag{ color:var(--moss-bright); }
+  .tracking-head{ display:flex; justify-content:space-between; align-items:end; gap:20px; flex-wrap:wrap; }
+  .tracking-status{ display:flex; align-items:center; gap:8px; font:12px var(--font-mono); color:var(--slate); }
+  .tracking-status small{ display:block; margin-top:4px; color:var(--slate); text-align:right; }
+  .tracking-layout{ display:grid; grid-template-columns:1.25fr .75fr; gap:18px; }
+  .live-map{ height:430px; border:1px solid var(--panel-line); border-radius:var(--radius); overflow:hidden; background:var(--ink-soft); }
+  .live-map .leaflet-container{ height:100%; }
+  .live-model{ height:250px; border:1px solid var(--panel-line); border-radius:var(--radius); overflow:hidden; background:radial-gradient(ellipse at 50% 30%,rgba(201,163,106,.12),transparent 68%),var(--ink-soft); }
+  .live-model canvas{ display:block; width:100% !important; height:100% !important; }
+  .tracking-side{ display:flex; flex-direction:column; gap:18px; min-width:0; }
+  .tracking-panel{ background:var(--panel); border:1px solid var(--panel-line); border-radius:var(--radius); padding:18px; }
+  .telemetry-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:var(--panel-line); border:1px solid var(--panel-line); border-radius:var(--radius-sm); overflow:hidden; }
+  .telemetry-stat{ background:var(--panel); padding:12px; min-width:0; }
+  .telemetry-label{ color:var(--slate); font:10px var(--font-mono); letter-spacing:.08em; text-transform:uppercase; margin-bottom:5px; }
+  .telemetry-value{ color:var(--paper); font:14px var(--font-mono); overflow-wrap:anywhere; }
+  .telemetry-value.good{ color:var(--moss-bright); }.telemetry-value.danger{ color:var(--danger); }
+  .follow-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:14px; color:var(--slate); font:11px var(--font-mono); }
+  .follow-row input{ accent-color:var(--moss-bright); }
+  .live-aircraft-marker{ background:transparent; border:0; color:var(--brass); font-size:24px; filter:drop-shadow(0 2px 3px rgba(0,0,0,.5)); }
+  @media(max-width:900px){ .tracking-layout{ grid-template-columns:1fr; }.live-map{ height:clamp(300px,62vw,430px); }.tracking-side{ display:grid; grid-template-columns:1fr 1fr; align-items:start; }.tracking-side .tracking-panel:first-child{ grid-column:1 / -1; } }
+  @media(max-width:600px){ .tracking-head{ display:block; }.tracking-status{ margin-top:14px; justify-content:flex-start; }.tracking-status small{ text-align:left; }.tracking-side{ display:flex; }.live-model{ height:230px; } }
 </style>
 </head>
 <body>
@@ -156,6 +177,13 @@
     </div>
   </section>
 
+  <section class="section" id="liveTracking" style="padding-top:0;">
+    <div class="wrap">
+      <div class="tracking-head section-head"><div><div class="eyebrow">Read-only telemetry</div><h2>Live flight tracking</h2><p style="font-size:14px;max-width:620px;margin-bottom:0;">Monitor the aircraft from MAVLink without sending commands. The dashboard waits safely when the bridge or GPS is unavailable.</p></div><div class="tracking-status"><span class="dot off" id="liveTrackingDot"></span><div><span id="liveTrackingStatus">OFFLINE · WAITING</span><small id="liveTrackingUpdated">Last update · waiting</small></div></div></div>
+      <div class="tracking-layout"><div class="live-map" id="liveMap"></div><div class="tracking-side"><div class="tracking-panel"><div class="panel-title">Telemetry stream</div><div class="telemetry-grid"><div class="telemetry-stat"><div class="telemetry-label">Latitude</div><div class="telemetry-value" id="liveLatitude">—</div></div><div class="telemetry-stat"><div class="telemetry-label">Longitude</div><div class="telemetry-value" id="liveLongitude">—</div></div><div class="telemetry-stat"><div class="telemetry-label">Altitude</div><div class="telemetry-value" id="liveAltitude">—</div></div><div class="telemetry-stat"><div class="telemetry-label">Ground speed</div><div class="telemetry-value" id="liveGroundSpeed">—</div></div><div class="telemetry-stat"><div class="telemetry-label">Heading</div><div class="telemetry-value" id="liveHeading">—</div></div><div class="telemetry-stat"><div class="telemetry-label">Battery</div><div class="telemetry-value" id="liveBattery">—</div></div><div class="telemetry-stat"><div class="telemetry-label">GPS fix</div><div class="telemetry-value" id="liveGpsFix">—</div></div><div class="telemetry-stat"><div class="telemetry-label">Satellites</div><div class="telemetry-value" id="liveSatellites">—</div></div><div class="telemetry-stat"><div class="telemetry-label">Flight mode</div><div class="telemetry-value" id="liveFlightMode">—</div></div><div class="telemetry-stat"><div class="telemetry-label">Armed status</div><div class="telemetry-value" id="liveArmed">—</div></div></div><label class="follow-row"><span>Follow aircraft on map</span><input id="liveFollow" type="checkbox" checked></label></div><div class="tracking-panel"><div class="panel-title">Aircraft attitude</div><div class="live-model" id="liveModelViewer" aria-label="Live 3D aircraft attitude model"></div><p class="hint" style="margin:10px 0 0;">Roll, pitch, and heading are interpolated from the telemetry stream.</p></div></div></div>
+    </div>
+  </section>
+
   <section class="section" style="padding-top:0;">
     <div class="wrap panel" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:18px;">
       <div>
@@ -178,6 +206,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="js/drone-model.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/live-tracking.js"></script>
 <script src="js/ui.js"></script>
 <script>
   initDroneModel("homeModelViewer");
